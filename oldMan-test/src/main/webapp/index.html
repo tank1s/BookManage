@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        a{
+            text-decoration:none;
+            color:black;
+        }
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+        }
+        .el-aside {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container style="height: 750px; border: 1px solid #eee">
+        <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
+            <el-menu :default-openeds="['1', '3']">
+                <el-submenu index="1">
+                    <template slot="title"><i class="el-icon-message"></i>健康状态</template>
+                    <el-menu-item index="1-3" @click="showOlder">主页</el-menu-item>
+                    <el-menu-item index="1-3" @click="intact">能力完好</el-menu-item>
+                    <el-menu-item index="1-3" @click="light">轻度失能</el-menu-item>
+                    <el-menu-item index="1-3" @click="moderate">中度失能</el-menu-item>
+                    <el-menu-item index="1-3" @click="severe">重度失能</el-menu-item>
+                </el-submenu>
+                <el-submenu index="2">
+                    <template slot="title"><i class="el-icon-menu"></i>可视化</template>
+                    <el-menu-item index="1-3" @click="showSectorChart">扇形图</el-menu-item>
+                    <el-menu-item index="1-3" @click="showHistogram">柱状图</el-menu-item>
+                </el-submenu>
+            </el-menu>
+        </el-aside>
+
+        <el-container>
+            <el-header style="text-align: right; font-size: 12px">
+                <el-dropdown>
+                    <i class="el-icon-setting" style="margin-left: 15px"></i>
+                </el-dropdown>
+            </el-header>
+
+            <!--主区域容器-->
+            <el-main>
+                <div v-show="info">
+                    <!--个人详细信息查看表-->
+                    <!-- Table -->
+
+                    <el-dialog title="详细信息" :visible.sync="dialogTableVisible">
+                        <el-table :data="gridData">
+
+                            <el-table-column property="id" label="编号" width="100"></el-table-column>
+                            <el-table-column property="name" label="姓名" width="100"></el-table-column>
+                            <el-table-column property="gender" label="性别" width="100"></el-table-column>
+                            <el-table-column property="age" label="年龄" width="100"></el-table-column>
+                            <el-table-column property="nation" label="民族" width="100"></el-table-column>
+                            <el-table-column property="idNumber" label="身份证号码" width="200"></el-table-column>
+                            <el-table-column property="socialNumber" label="社保卡号" width="200"></el-table-column>
+                            <el-table-column property="education" label="学历" width="100"></el-table-column>
+                            <el-table-column property="address" label="地址" width="100"></el-table-column>
+                            <el-table-column property="healthy" label="健康状态" width="100"></el-table-column>
+                            <el-table-column property="other" label="其他" width="300"></el-table-column>
+                        </el-table>
+                        <el-button type="primary" @click="dialogTableVisible = false">关闭</el-button>
+                    </el-dialog>
+
+                    <!--多条件查询-->
+                    <el-form :inline="true" :model="older" class="demo-form-inline">
+
+                        <el-form-item label="姓名">
+                            <el-input v-model="older.name" placeholder="老人姓名"></el-input>
+                        </el-form-item>
+
+                        <el-form-item label="编号">
+                            <el-input v-model="older.id" placeholder="老人编号"></el-input>
+                        </el-form-item>
+
+                        <el-form-item>
+                            <el-button type="primary" @click="selectByCondition">查询</el-button>
+                        </el-form-item>
+                    </el-form>
+
+                    <!--老年人信息表-->
+                    <template>
+                        <el-table
+                                :data="tableData"
+                                style="width: 100%"
+                                :row-class-name="tableRowClassName"
+                                @selection-change="handleSelectionChange"
+                        >
+                            <el-table-column
+                                    label="序号"
+                                    type="index"
+                                    width="50">
+                            </el-table-column>
+
+                            <el-table-column
+                                    label="编号"
+                                    type="id"
+                                    width="50">
+                            </el-table-column>
+
+                            <el-table-column
+                                    prop="name"
+                                    label="姓名"
+                                    align="center"
+                            >
+                            </el-table-column>
+                            <el-table-column
+                                    prop="gender"
+                                    label="性别"
+                                    align="center"
+                            >
+                            </el-table-column>
+                            <el-table-column
+                                    prop="age"
+                                    label="年龄"
+                                    align="center"
+                            >
+                            </el-table-column>
+                            <el-table-column
+                                    prop="nation"
+                                    align="center"
+                                    label="民族">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="education"
+                                    align="center"
+                                    label="学历">
+                            </el-table-column>
+
+                            <el-table-column
+                                    prop="address"
+                                    align="center"
+                                    label="家庭住址">
+                            </el-table-column>
+
+                            <el-table-column
+                                    prop="healthy"
+                                    align="center"
+                                    label="健康状态">
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    label="操作">
+
+                                <!--<el-row>
+                                    <el-button type="primary" @click="see(scope.row)">查看</el-button>
+                                </el-row>-->
+                                <template v-slot="scope">
+                                    <el-button type="primary" size="medium" @click="see(scope.row)">查看</el-button>
+                                </template>
+
+                            </el-table-column>
+
+                        </el-table>
+                    </template>
+                </div>
+                <div v-show="chart">
+                    <!-- 为 ECharts 准备一个定义了宽高的 DOM -->
+                    <div id="main" style="width: 600px;height:400px;"></div>
+                </div>
+            </el-main>
+        </el-container>
+    </el-container>
+
+</div>
+
+<script src="js/vue.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+<script src="js/axios-0.18.0.js"></script>
+<script src="js/echarts.js"></script>
+
+<script>
+    new Vue({
+        el:"#app",
+        mounted(){
+            this.selectAll();
+        },
+        data() {
+            return {
+                info:true,
+                chart:false,
+                //老年人信息
+                older:{
+                    id:'',
+                    name:'',
+                    gender:'',
+                    age:'',
+                    idNumber:'',
+                    socialNumber:'',
+                    nation:'',
+                    education:'',
+                    address:'',
+                    healthy:'',
+                    other:'',
+                },
+                // 表格数据
+                tableData: [{
+                    id:'1',
+                    name: '张三',
+                    gender: '男',
+                    age:'',
+                    idNumber:'',
+                    socialNumber:'',
+                    nation: '汉',
+                    education: '小学',
+                    address:'北京朝阳',
+                    healthy:'健康',
+                    other:''
+                }, {
+                    id:'',
+                    name: '张三',
+                    gender: '男',
+                    idNumber:'',
+                    socialNumber:'',
+                    nation: '汉',
+                    education: '小学',
+                    address:'北京朝阳',
+                    healthy:'健康',
+                    other:''
+                }, {
+                    id:'',
+                    name: '张三',
+                    gender: '男',
+                    idNumber:'',
+                    socialNumber:'',
+                    nation: '汉',
+                    education: '小学',
+                    address:'北京朝阳',
+                    healthy:'健康',
+                    other:''
+                }, {
+                    id:'',
+                    name: '张三',
+                    gender: '男',
+                    idNumber:'',
+                    socialNumber:'',
+                    nation: '汉',
+                    education: '小学',
+                    address:'北京朝阳',
+                    healthy:'健康',
+                    other:''
+                }],
+                gridData: [{
+                    id:'001',
+                    name:'张三',
+                    gender:'男',
+                    age:'18',
+                    idNumber:'421023200202033717',
+                    socialNumber:'421023200202033717',
+                    nation:'汉',
+                    education:'小学',
+                    address:'北京朝阳',
+                    healthy:'能力完好',
+                    other:'无',
+                }, {
+                    id:'001',
+                    name:'张三',
+                    gender:'男',
+                    age:'18',
+                    idNumber:'123123',
+                    socialNumber:'123456',
+                    nation:'汉',
+                    education:'123123',
+                    address:'北京朝阳',
+                    healthy:'能力完好',
+                    other:'无',
+                }],
+                dialogTableVisible: false,
+                //图表数据
+                charts: [{
+                    value:'',
+                    name:''
+                }],
+            }
+        },
+        methods:{
+            // 查询所有
+            selectAll(){
+                var _this = this;
+                axios({
+                    method:"get",
+                    url:"http://localhost:5000/oldMan-test/old/selectAll"
+                }).then(function (resp){
+                    _this.tableData = resp.data;
+                })
+            },
+            selectByStatus(){
+                var _this = this
+                axios({
+                    method: "post",
+                    url:"http://localhost:5000/oldMan-test/old/selectByStatus",
+                    data:_this.older
+                }).then(function (resp){
+                    _this.tableData = resp.data;
+                })
+            },
+            //
+            intact(){
+                console.log('能力完好')
+                this.older.healthy = '能力完好'
+                console.log(this.older)
+                this.selectByStatus()
+            },
+            light(){
+                console.log('轻度失能')
+                this.older.healthy = '轻度失能'
+                console.log(this.older)
+                this.selectByStatus()
+            },
+            moderate(){
+                console.log('中度失能')
+                this.older.healthy = '中度失能'
+                console.log(this.older)
+                this.selectByStatus()
+            },
+            severe(){
+                console.log('重度失能')
+                this.older.healthy = '重度失能'
+                console.log(this.older)
+                this.selectByStatus()
+            },
+            see(val){
+                var _this = this
+                axios({
+                    method: "post",
+                    url:"http://localhost:5000/oldMan-test/old/selectById",
+                    data:val
+                }).then(function (resp){
+                    _this.gridData = resp.data;
+                })
+                this.dialogTableVisible = true
+            },
+            //条件查询
+            selectByCondition(){
+                var _this = this
+                axios({
+                    method: "post",
+                    url:"http://localhost:5000/oldMan-test/old/selectByCondition",
+                    data:_this.older
+                }).then(function (resp){
+                    _this.tableData = resp.data;
+                })
+            },
+            //显示扇形图
+            showSectorChart(){
+                this.info = false
+                this.chart = true
+                var _this = this
+                axios({
+                    method: "get",
+                    url:"http://localhost:5000/oldMan-test/old/getData",
+                }).then(function (resp){
+                    _this.charts = resp.data;
+                    // 基于准备好的dom，初始化echarts实例
+                    var myChart = echarts.init(document.getElementById('main'));
+
+                    var flame = _this.charts
+                    console.log('flame:',flame)
+
+                    // 指定图表的配置项和数据
+                    var option = {
+                        series : [
+                            {
+                                name: '访问来源',
+                                type: 'pie',
+                                radius: '55%',
+                                roseType: 'angle',
+                                data: flame
+                            }
+                        ]
+                    };
+
+                    // 使用刚指定的配置项和数据显示图表。
+                    myChart.setOption(option);
+                })
+            },
+            //显示柱状图
+            showHistogram(){
+                this.info = false
+                this.chart = true
+                var _this = this
+                axios({
+                    method: "get",
+                    url:"http://localhost:5000/oldMan-test/old/getData",
+                }).then(function (resp){
+                    _this.charts = resp.data;
+                    // 基于准备好的dom，初始化echarts实例
+                    var myChart = echarts.init(document.getElementById('main'));
+
+                    /*
+                    var arr = [
+                                { id: 1, name: "张三" },
+                                { id: 2, name: "李四" },
+                                { id: 3, name: "王五" },
+                            ]
+
+                            var newArr = arr.map( (item, index) => {
+                                return item.id
+                            })
+
+                            console.log("arr的id集合", newArr)
+                            // newArr 为：[1, 2, 3]
+
+                     */
+                    var names = _this.charts.map((item,index) =>{
+                        return item.name
+                    })
+                    var values = _this.charts.map((item,index) =>{
+                        return item.value
+                    })
+                    option = {
+                        xAxis: {
+                            data: names
+                        },
+                        yAxis: {},
+                        series: [
+                            {
+                                type: 'bar',
+                                data: values
+                            }
+                        ]
+                    };
+                    // 使用刚指定的配置项和数据显示图表。
+                    myChart.setOption(option);
+                })
+            },
+            showOlder(){
+                this.chart = false
+                this.info = true
+            }
+
+        }
+    })
+</script>
+</body>
+</html>
